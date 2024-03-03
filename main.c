@@ -13,7 +13,7 @@ int prefixCount = 0;
 //Funkcja odczytu adresu IP i sprawdzenia poprawnosci wprowadzanych danych przez uzytkownika
 unsigned int read_ip_address() {
     unsigned int octet1, octet2, octet3, octet4;
-    printf("Write IP address in the format xxx.xxx.xxx.xxx: ");
+    printf("Write IP address: ");
     if (scanf("%u.%u.%u.%u", &octet1, &octet2, &octet3, &octet4) != 4) {
         printf("Error: Incorrect IP Address format!\n");
         return 0;
