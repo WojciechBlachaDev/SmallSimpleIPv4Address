@@ -98,7 +98,7 @@ void check(unsigned int ip) {
     if (!found) {
         printf("IP address not found in the prefix list.\n");
     } else {
-        printf("Highest mask in the prefix list containing the IP address: %u.%u.%u.%u/%d\n", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, (ip >> 8) & 0xFF, ip & 0xFF, highest_mask);
+        printf("Smallest mask in the prefix list containing the IP address: %u.%u.%u.%u/%d\n", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, (ip >> 8) & 0xFF, ip & 0xFF, highest_mask);
     }
 }
 
