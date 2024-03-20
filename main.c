@@ -16,7 +16,7 @@ unsigned int read_ip_address() {
     printf("Write IP address: ");
     if (scanf("%u.%u.%u.%u", &octet1, &octet2, &octet3, &octet4) != 4) {
         printf("Error: Incorrect IP Address format!\n");
-        return 0;
+        return -1;
     } else {
         return (octet1 << 24) | (octet2 << 16) | (octet3 << 8) | octet4;
     }
@@ -34,57 +34,93 @@ char read_mask() {
     }
 }
 
-//Funkcja sprawdzenia czy adres IP miesci sie w danym prefixie
+bool is_valid_ip(unsigned int ip) {
+    return (ip >> 24) <= 255 && ((ip >> 16) & 0xFF) <= 255 && ((ip >> 8) & 0xFF) <= 255 && (ip & 0xFF) <= 255;
+}
+
+
 bool is_subset(unsigned int ip, unsigned int base, char mask) {
     unsigned int masked_ip = ip & ((0xFFFFFFFF) << (32 - mask));
     return masked_ip == base;
 }
 
-//FUnkcja dodawania nowych prefixow
-void add(unsigned int base, char mask) {
-    for (int i = 0; i < prefixCount; i++) {
-        if (prefixList[i].base == base && prefixList[i].mask == mask) {
-            printf("Prefix already exists in the list.\n");
-            return;
-        }
+int checkInput(unsigned int base, char mask){
+    if (base > 0xFFFFFFFF) {
+        return -1;
     }
-    if (prefixCount >= MAX_PREFIXES) {
-        printf("Error: Prefix list is full!\n");
-        return;
+    if (mask < 0 || mask > 32) {
+        return -2;
     }
-    prefixList[prefixCount].base = base;
-    prefixList[prefixCount].mask = mask;
-    prefixCount++;
-    printf("Prefix added successfully: %u.%u.%u.%u/%d\n", (base >> 24) & 0xFF, (base >> 16) & 0xFF, (base >> 8) & 0xFF, base & 0xFF, mask);
+    return 1;
 }
 
-//Funkcja usuwania prefixow
-void del() {
+int add(unsigned int base, char mask) {
+    int verify = checkInput(base, mask);
+    if (verify == 1){
+        for (int i = 0; i < prefixCount; i++) {
+            if (prefixList[i].base == base && prefixList[i].mask == mask) {
+                return 0;
+            }
+        }
+        if (prefixCount >= MAX_PREFIXES) {
+            printf("Error: Prefix list is full!\n");
+            return -3;
+        }
+        prefixList[prefixCount].base = base;
+        prefixList[prefixCount].mask = mask;
+        prefixCount++;
+        return 1;
+    }
+    return verify;
+}
+
+
+int del(unsigned int base, char mask) {
+    // Sprawdź poprawność danych wejściowych
+    int inputCheck = checkInput(base, mask);
+    if (inputCheck == -1) {
+        printf("Invalid base IP address.\n");
+        return -1;
+    } else if (inputCheck == -2) {
+        printf("Invalid mask value.\n");
+        return -1;
+    }
+
     if (prefixCount == 0) {
         printf("Prefix list is empty.\n");
-        return;
+        return -1;
     }
-    printf("Prefixes in the list:\n");
+
+    // Szukaj prefiksu na liście i usuń go, jeśli istnieje
+    bool prefixFound = false;
     for (int i = 0; i < prefixCount; i++) {
-        printf("%d. %u.%u.%u.%u/%d\n", i + 1, (prefixList[i].base >> 24) & 0xFF, (prefixList[i].base >> 16) & 0xFF, (prefixList[i].base >> 8) & 0xFF, prefixList[i].base & 0xFF, prefixList[i].mask);
+        if (prefixList[i].base == base && prefixList[i].mask == mask) {
+            prefixFound = true;
+            // Usuń prefiks z listy
+            for (int j = i; j < prefixCount - 1; j++) {
+                prefixList[j] = prefixList[j + 1];
+            }
+            prefixCount--;
+            printf("Prefix deleted successfully: %u.%u.%u.%u/%d\n", (base >> 24) & 0xFF, (base >> 16) & 0xFF, (base >> 8) & 0xFF, base & 0xFF, mask);
+            break;
+        }
     }
-    int choice;
-    printf("Select the prefix number to delete (1 - %d): ", prefixCount);
-    if (scanf("%d", &choice) != 1 || choice < 1 || choice > prefixCount) {
-        printf("Invalid choice.\n");
-        return;
+
+    if (!prefixFound) {
+        printf("Prefix not found in the list.\n");
+        return -1;
     }
-    unsigned int base = prefixList[choice - 1].base;
-    char mask = prefixList[choice - 1].mask;
-    for (int i = choice - 1; i < prefixCount - 1; i++) {
-        prefixList[i] = prefixList[i + 1];
-    }
-    prefixCount--;
-    printf("Prefix deleted successfully: %u.%u.%u.%u/%d\n", (base >> 24) & 0xFF, (base >> 16) & 0xFF, (base >> 8) & 0xFF, base & 0xFF, mask);
+
+    return 1;
 }
 
-//Funckja sprawdzajaca czy adres IP znajduje sie w zapisanych prefixach
-void check(unsigned int ip) {
+
+
+int check(unsigned int ip) {
+    if (!is_valid_ip(ip)) {
+        printf("Invalid IP address.\n");
+        return -1;
+    }
     char highest_mask = -1;
     bool found = false;
     for (int i = 0; i < prefixCount; i++) {
@@ -97,8 +133,9 @@ void check(unsigned int ip) {
     }
     if (!found) {
         printf("IP address not found in the prefix list.\n");
+        return -1;
     } else {
-        printf("Smallest mask in the prefix list containing the IP address: %u.%u.%u.%u/%d\n", (ip >> 24) & 0xFF, (ip >> 16) & 0xFF, (ip >> 8) & 0xFF, ip & 0xFF, highest_mask);
+        return highest_mask;
     }
 }
 
